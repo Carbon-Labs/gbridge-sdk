@@ -1,0 +1,21 @@
+{
+  "name": "sdk",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@zilliqa-js/account": "^3.3.4",
+    "@zilliqa-js/contract": "^3.3.4",
+    "@zilliqa-js/crypto": "^3.3.4",
+    "@zilliqa-js/subscriptions": "^3.3.4",
+    "@zilliqa-js/util": "^3.3.4",
+    "@zilliqa-js/zilliqa": "^3.3.4",
+    "web3": "^1.7.4"
+  }
+}
