@@ -33,7 +33,7 @@ const sleep = (milliseconds) => {
 };
 
 class EVMWallet {
-    constructor({web3 = new Web3(), account = new Account()}) {
+    constructor(web3 = new Web3(), account = new Account()) {
         this.web3 = web3;
         this.account = account;
         this.isConnected = false;
@@ -137,10 +137,10 @@ class ZilWallet {
 class HardhatWallet {
     constructor(web3, account, contract) {
         this.web3 = web3;
-        this.isConnected = false;
+        this.isConnected = true;
         this.account = account;
         this.contractAPI = contract;
-        this.txParams = {};
+        this.txParams = undefined;
     }
 
     configTx(txParams = {}) {
@@ -151,7 +151,7 @@ class HardhatWallet {
     async connect(account) {
         this.isConnected = true;
         this.account = account;
-        await this.contractAPI.connect(account);
+        this.contractAPI = this.contractAPI.connect(this.account);
         return this;
     }
 
@@ -165,19 +165,19 @@ class HardhatWallet {
         return this.web3.eth.sign(msg, this.account.address);
     }
     async contract(contractAPI) {
-        this.contractAPI = contractAPI;
-        if(!contractAPI.connect)
-            return this.contractAPI;
-        await this.contractAPI.connect(this.account);
+        this.contractAPI = contractAPI.connect(this.account);
         return this.contractAPI;
     }
     async callFunction(contractAPI, method, params) {
         const contract = await this.contract(contractAPI);
-        return contract[method](...params, this.txParams);
+        const tx = this.txParams ? await contract[method](...params, this.txParams) : await contract[method](...params);
+        this.txParams = undefined;
+        return tx;
     }
 };
 
 class IGBridge {
+    configTx(txParams) {}
     async signMsg(msg) {}
     async transfer(chainId, token, amount, to) {}
     async claim(chainId, from, to, token, amount, nonce, proofs) {}
@@ -208,16 +208,14 @@ class Gbridge  {
         return this.web3.signMsg(msg);
     }
     async transfer(chainId, token, amount, to) {
-        if(this.web3.isZil) {
-            const params = [
-                { "vname": "chainId", "type": "String", "value": chainId },
-                { "vname": "to", "type": "ByStr20", "value": to },
-                { "vname": "token", "type": "ByStr20", "value": token },
-                { "vname": "amount", "type": "Uint256", "value": amount }
-            ];
-            return this.web3.callFunction(this.bridge, "Transfer", params);
-        }
-        return this.web3.callFunction(this.bridge, "Transfer", [chainId, token, amount, to]);
+        const params = this.web3.isZil ? [
+            { "vname": "chainId", "type": "String", "value": chainId },
+            { "vname": "to", "type": "ByStr20", "value": to },
+            { "vname": "token", "type": "ByStr20", "value": token },
+            { "vname": "amount", "type": "Uint256", "value": amount }
+        ] : [chainId, token, amount, to];
+
+        return this.web3.callFunction(this.bridge, "Transfer", params);
     }
     async claim(chainId, from, to, token, amount, nonce, proofs) {
         const params = this.web3.isZil ?  [
@@ -227,7 +225,7 @@ class Gbridge  {
             { "vname": "token", "type": "ByStr20", "value": token },
             { "vname": "amount", "type": "Uint256", "value": amount },
             { "vname": "nonce", "type": "Uint256", "value": nonce },
-            { "vname": "proofs", "type": "List (Pair (ByStr20) (ByStr64))", "value": toSendProofs }
+            { "vname": "proofs", "type": "List (Pair (ByStr20) (ByStr64))", "value": proofs }
         ] : [chainId, from, to, token, amount, nonce, proofs];
         
         return this.web3.callFunction(this.bridge, "Claim", params);
