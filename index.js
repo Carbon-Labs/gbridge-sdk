@@ -230,8 +230,8 @@ class Gbridge  {
         
         return this.web3.callFunction(this.bridge, "Claim", params);
     }
-    async aprove(token = new Contract(), spender, amount) {
-        const params = this.wallet.isZil ? [
+    async approve(token = new Contract(), spender, amount) {
+        const params = this.web3.isZil ? [
             { "vname": "spender", "type": "ByStr20", "value": spender },
             { "vname": "amount", "type": "Uint128", "value": amount }
         ] : [spender, amount];
